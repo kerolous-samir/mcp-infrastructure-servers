@@ -29,7 +29,7 @@
       "command": "/path/to/mcp-infrastructure-servers/.venv/bin/python",
       "args": ["-m", "winrm_mcp.server"],
       "env": {
-        "PYTHONPATH": "/path/to/mcp-infrastructure-servers/servers/winrm",
+        "PYTHONPATH": "/path/to/mcp-infrastructure-servers/servers/winrm_server",
         "WINRM_MCP_STAGING_ROOT": "/var/lib/mcp-winrm/staging"
       }
     },

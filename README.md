@@ -1,5 +1,7 @@
 # MCP Infrastructure Servers
 
+[![tests](https://github.com/kerolous-samir/mcp-infrastructure-servers/actions/workflows/tests.yml/badge.svg)](https://github.com/kerolous-samir/mcp-infrastructure-servers/actions/workflows/tests.yml)
+
 Five [Model Context Protocol](https://modelcontextprotocol.io) servers that expose
 infrastructure tooling — libvirt/KVM, Active Directory, WinRM, PostgreSQL and shell — as
 tools an AI agent can call.
@@ -21,7 +23,7 @@ your own agent) decides when to invoke them and passes the results back to the m
 |---|---:|---|
 | `servers/libvirt` | 52 | VM lifecycle (start/stop/reboot/force-stop/delete), creation and cloning, golden images, snapshots, storage pools and volumes, virtual networks and bridges, VNC/console URIs, DHCP leases, remote hypervisor registration, host OS queries and network configuration |
 | `servers/active_directory` | 50 | Users, groups, OUs and computers (create/read/update/delete/search), password reset and unlock, account enable/disable, GPO create/link/backup/restore, DNS zones and records, DHCP scopes, leases and reservations, domain and forest info, DC registration |
-| `servers/winrm` | 34 | Remote command and PowerShell execution on Windows hosts, file upload/download/delete, directory listing, service and process control, local users and groups, network adapters, DNS and hostname configuration, disks and volumes, event logs, system info, reboot and shutdown |
+| `servers/winrm_server` | 34 | Remote command and PowerShell execution on Windows hosts, file upload/download/delete, directory listing, service and process control, local users and groups, network adapters, DNS and hostname configuration, disks and volumes, event logs, system info, reboot and shutdown |
 | `servers/sql` | 36 | PostgreSQL connection management, parameterised queries and statements, table listing and introspection, table statistics, schema initialisation, database backup, plus CRUD and search over a simple host/VM/network/user inventory |
 | `servers/bash` | 37 | Command and script execution locally or over SSH, file read/write/copy/move/delete and search, systemd service control, process listing and termination, user management, interfaces/routes/ping, disk usage and mounts, package management, hostname and uptime |
 
@@ -72,7 +74,7 @@ config file, and no server contacts any central service.
 | `AD_TLS_CA_BUNDLE` | CA bundle used to validate the DC's certificate. When set, certificate validation is **required**; when unset, LDAP still uses StartTLS but does not verify the peer. Set this in production. |
 | `AD_ALLOW_CLEARTEXT_BIND` | `true` disables StartTLS entirely, sending the bind password unencrypted. Intended only for an isolated lab, and the server logs a warning on every connection. |
 
-### `servers/winrm`
+### `servers/winrm_server`
 
 | Variable | Purpose |
 |---|---|
@@ -128,9 +130,8 @@ into your client's config, replacing `/path/to/mcp-infrastructure-servers` with 
 Two things matter here:
 
 - **`PYTHONPATH` must point at the individual server directory** (`servers/bash`), never at
-  `servers/`. Each server directory contains one importable package. Putting `servers/` on the
-  path would let the `servers/winrm/` directory shadow the third-party `winrm` module that the
-  WinRM server itself depends on.
+  `servers/`. Each server directory contains exactly one importable package, and pointing at the
+  parent puts five of them on the path at once.
 - The libvirt server is launched by script path (`servers/libvirt/server.py`); the other four
   are launched as modules (`-m ad_mcp.server`, `-m winrm_mcp.server`, `-m sql_mcp.server`,
   `-m bash_mcp.server`).
@@ -147,6 +148,43 @@ printf '%s\n' \
 
 If you pipe input this way, the server may exit on EOF before flushing its reply. Keep stdin
 open until the response arrives — a real client does this for you.
+
+## Tests
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt -r requirements-dev.txt
+.venv/bin/python -m pytest -v
+```
+
+29 tests, no external infrastructure required. They run in CI on Python 3.11 and 3.12.
+
+**What is covered.** Each server is launched as a real subprocess and driven over stdio
+JSON-RPC: `initialize` completes, `tools/list` returns the exact expected tool count, a named
+sample tool is present, every tool's `inputSchema` is a well-formed object, and the process
+exits 0 when stdin closes. The expected counts are pinned per server (52 / 50 / 34 / 36 / 37),
+so adding or losing a tool fails the suite rather than passing quietly.
+
+`tests/test_bash_sandbox.py` proves the filesystem claim in the Security section rather than
+asserting it. Nine cases against a temporary allowlist: a legitimate in-sandbox read succeeds,
+and an absolute path outside the root, a `..` traversal, a symlink to a file outside, a symlink
+to a *directory* outside, a listing, a write, a delete and a copy-out are each refused — with
+the canary contents asserted absent from the refusal, so a refusal that still leaked the file
+would fail. The refusal is matched on the sandbox's own wording (`path not allowed … resolves
+outside the permitted root(s)`), not on "any error", so an unrelated failure cannot pass the
+test.
+
+**What is deliberately not covered.** Nothing here touches a live hypervisor, domain
+controller, Windows host or database. The tests exercise the protocol surface — the tools a
+server advertises and the shape of their schemas — not the effects of calling them. Verifying
+`start_vm` really starts a VM needs a hypervisor, and a test that mocked one would prove only
+that the mock works. A server whose Python dependency is absent is skipped with a reason naming
+the module, so "skipped" and "passed" never look alike.
+
+**A known rough edge.** `BASH_MCP_ALLOWED_ROOTS=/` does not mean "allow everything" — it
+refuses every path, including ones under `/`. The containment check appends a separator to the
+root, so `/` becomes `//` and matches nothing. It fails closed, which is the safe direction, but
+if you meant to widen access, name the directories explicitly instead.
 
 ## Security
 
