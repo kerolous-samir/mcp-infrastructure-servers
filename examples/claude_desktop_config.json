@@ -1,0 +1,61 @@
+{
+  "mcpServers": {
+    "libvirt": {
+      "command": "/path/to/mcp-infrastructure-servers/.venv/bin/python",
+      "args": ["/path/to/mcp-infrastructure-servers/servers/libvirt/server.py"],
+      "env": {
+        "PYTHONPATH": "/path/to/mcp-infrastructure-servers/servers/libvirt",
+        "MCP_SSH_KEY_PATH": "/root/.ssh/id_ed25519",
+        "DB_HOST": "localhost",
+        "DB_PORT": "5432",
+        "DB_DATABASE": "inventory",
+        "DB_USERNAME": "inventory_ro",
+        "DB_PASSWORD": ""
+      }
+    },
+    "active_directory": {
+      "command": "/path/to/mcp-infrastructure-servers/.venv/bin/python",
+      "args": ["-m", "ad_mcp.server"],
+      "env": {
+        "PYTHONPATH": "/path/to/mcp-infrastructure-servers/servers/active_directory",
+        "AD_DC_HOST": "",
+        "AD_DC_USERNAME": "",
+        "AD_DC_PASSWORD": "",
+        "AD_DC_DOMAIN": "",
+        "AD_TLS_CA_BUNDLE": "/etc/ssl/certs/ca-certificates.crt"
+      }
+    },
+    "winrm": {
+      "command": "/path/to/mcp-infrastructure-servers/.venv/bin/python",
+      "args": ["-m", "winrm_mcp.server"],
+      "env": {
+        "PYTHONPATH": "/path/to/mcp-infrastructure-servers/servers/winrm",
+        "WINRM_MCP_STAGING_ROOT": "/var/lib/mcp-winrm/staging"
+      }
+    },
+    "sql": {
+      "command": "/path/to/mcp-infrastructure-servers/.venv/bin/python",
+      "args": ["-m", "sql_mcp.server"],
+      "env": {
+        "PYTHONPATH": "/path/to/mcp-infrastructure-servers/servers/sql",
+        "DB_HOST": "localhost",
+        "DB_PORT": "5432",
+        "DB_DATABASE": "inventory",
+        "DB_USERNAME": "inventory_rw",
+        "DB_PASSWORD": "",
+        "SQL_MCP_RO_USER": "inventory_ro",
+        "SQL_MCP_RO_PASSWORD": "",
+        "SQL_MCP_BACKUP_DIR": "/var/backups"
+      }
+    },
+    "bash": {
+      "command": "/path/to/mcp-infrastructure-servers/.venv/bin/python",
+      "args": ["-m", "bash_mcp.server"],
+      "env": {
+        "PYTHONPATH": "/path/to/mcp-infrastructure-servers/servers/bash",
+        "BASH_MCP_ROOT": "/srv/managed",
+        "BASH_MCP_ALLOWED_ROOTS": "/srv/managed:/var/log"
+      }
+    }
+  }
+}
