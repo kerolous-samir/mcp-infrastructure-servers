@@ -193,6 +193,10 @@ servers' tools can resolve names against.
 pressure, tail a log, install a package, restart a unit, or run a short script across a group of
 machines.
 
+---
+These servers ran in production inside a multi-tenant virtualization platform before being extracted, de-branded and released here.
+---
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
