@@ -4,6 +4,10 @@ Five [Model Context Protocol](https://modelcontextprotocol.io) servers that expo
 infrastructure tooling — libvirt/KVM, Active Directory, WinRM, PostgreSQL and shell — as
 tools an AI agent can call.
 
+---
+These servers ran in production inside a multi-tenant virtualization platform before being extracted, de-branded and released here.
+---
+
 ## What MCP is
 
 The Model Context Protocol is an open standard that lets an AI model call tools provided by
@@ -193,9 +197,6 @@ servers' tools can resolve names against.
 pressure, tail a log, install a package, restart a unit, or run a short script across a group of
 machines.
 
----
-These servers ran in production inside a multi-tenant virtualization platform before being extracted, de-branded and released here.
----
 
 ## License
 
